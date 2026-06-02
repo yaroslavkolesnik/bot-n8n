@@ -5,9 +5,7 @@
       "parameters": {
         "promptType": "define",
         "text": "={{ $json.message.text }}",
-        "options": {
-          "systemMessage": "Ты придумываешь шутки, я пишу тебе тему, а ты отвечешь шуткой "
-        }
+        "options": {}
       },
       "type": "@n8n/n8n-nodes-langchain.agent",
       "typeVersion": 3.1,
@@ -151,7 +149,7 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "94cc9962-5b29-4f5b-961d-e56a828263b0",
+  "versionId": "3b648bdb-d934-4694-9641-ea5277e8ca46",
   "meta": {
     "templateCredsSetupCompleted": true,
     "instanceId": "c25f039cc5b766738ff29c840bdf062d819a7e136af2e250d211e1fad1bc97ae"
