@@ -1,0 +1,669 @@
+{
+  "name": "Auto-Tag Blog Posts in WordPress with AI",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "0b62a6e9-3ecf-4315-8c2e-4707a5e047f6",
+      "name": "Auto-fixing Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserAutofixing",
+      "position": [
+        832,
+        400
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n\t\"tags\": [\"Germany\", \"Technology\", \"Workflow Automation\"]\n}"
+      },
+      "id": "14d4d4ec-efac-4240-ae0c-329c22debcec",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        928,
+        624
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        }
+      },
+      "id": "c0fb25ae-67d0-4ca1-a8f0-d128ea236f87",
+      "name": "RSS Feed Trigger",
+      "type": "n8n-nodes-base.rssFeedReadTrigger",
+      "position": [
+        512,
+        192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ebe28fc7-f166-4428-b3f3-b319f2d080df",
+              "name": "tag_ids",
+              "type": "array",
+              "value": "={{ $json.tag_ids }}"
+            },
+            {
+              "id": "bc296683-2a93-42b4-a9a7-90a2bc22f37b",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $('MOCK article').item.json.title }}"
+            },
+            {
+              "id": "32dc0950-3708-447e-a3b6-a5c5ae9bdcd0",
+              "name": "content",
+              "type": "string",
+              "value": "={{ $('MOCK article').item.json.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e126b608-9e8b-460d-a70a-a5b6bb8c61b1",
+      "name": "Return article details",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1504,
+        192
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "missing_tags",
+        "options": {
+          "destinationFieldName": "missing_tag"
+        }
+      },
+      "id": "2d777f48-52cd-43f5-ba32-9845f70fbc5f",
+      "name": "Split Out",
+      "type": "n8n-nodes-base.splitOut",
+      "position": [
+        -448,
+        704
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "fe352a2e-3878-4c5a-9f2d-85ffe9bab54b",
+      "name": "Loop over articles",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        -656,
+        192
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "35318c11-de4c-4883-851a-6589c8f64efa",
+      "name": "SET initial record",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -448,
+        304
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "url": "https://www.example.com/wp-json/wp/v2/tags",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "options": {}
+      },
+      "id": "8f55f7b2-4f38-40e5-a648-cfbd7efe984d",
+      "name": "GET WP tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -208,
+        304
+      ],
+      "executeOnce": true,
+      "typeVersion": 4.2,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.example.com/wp-json/wp/v2/tags",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "slug",
+              "value": "={{ $json.missing_tag }}"
+            },
+            {
+              "name": "name",
+              "value": "={{ $json.missing_tag.replaceAll(\"-\",\" \").toTitleCase() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "7343ba48-5bca-41f9-96ea-69b945ea8358",
+      "name": "POST WP tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -224,
+        704
+      ],
+      "executeOnce": false,
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "url": "https://www.example.com/wp-json/wp/v2/tags",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "wordpressApi",
+        "options": {}
+      },
+      "id": "7c7b41f5-3034-4ffd-a0b0-fc298b78e5e7",
+      "name": "GET updated WP tags",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        64,
+        704
+      ],
+      "executeOnce": true,
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "8ec4fdfc-73f3-4d7b-96e4-f42a18252599",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              },
+              "leftValue": "={{ $('SET initial record').first().json.tags.map(item => item.toLowerCase().replaceAll(\" \",\"-\")) }}",
+              "rightValue": "={{ $json.slug }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "d8ca53e6-636d-40ac-8e7c-903be5dc6fa7",
+      "name": "Keep matches",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        -448,
+        912
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "id",
+              "renameField": true,
+              "outputFieldName": "tag_ids"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "75f15b74-5f41-48d9-a834-de6ba01fe66b",
+      "name": "Combine tag_ids",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        -224,
+        912
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "slug",
+              "renameField": true,
+              "outputFieldName": "tags"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6f6a2841-3ee1-466b-b2ca-fda3f2e9ff36",
+      "name": "Combine slugs",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        64,
+        304
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "8d77d072-cb47-4fbb-831a-0e6f3ecefc71",
+              "operator": {
+                "type": "array",
+                "operation": "empty",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.missing_tags }}",
+              "rightValue": ""
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "76d501be-ae27-4b47-83c3-830c70239426",
+      "name": "If",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        -208,
+        512
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4a69cf1b-341a-40bc-a36a-b76c05bdd819",
+              "name": "title",
+              "type": "string",
+              "value": "={{ $('RSS Feed Trigger').item.json.title }}"
+            },
+            {
+              "id": "63097eb0-6165-4365-a5b5-e9f3de65d715",
+              "name": "content",
+              "type": "string",
+              "value": "={{ $('RSS Feed Trigger').item.json.content }}"
+            },
+            {
+              "id": "ae4859ec-ad14-403e-b5b6-53703fefe3f3",
+              "name": "categories",
+              "type": "array",
+              "value": "={{ $('RSS Feed Trigger').item.json.categories }}"
+            },
+            {
+              "id": "3f94d5ac-5196-4ad0-acea-79c07b0ee2c6",
+              "name": "tags",
+              "type": "array",
+              "value": "={{ $json.output.tags }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0fe03d25-80db-4fcf-bb8b-9a51eadca74c",
+      "name": "MOCK article",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1104,
+        192
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "jsCode": "const new_ary = $('SET initial record').first().json.tags.map(x => x.toLowerCase().replaceAll(\" \",\"-\")).filter(x => !$input.first().json.tags.includes(x))\n\nreturn {\"missing_tags\": new_ary};"
+      },
+      "id": "4c6f580f-4102-47e4-bb21-758e536ca785",
+      "name": "Return missing tags",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -448,
+        512
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "title": "=Demo tagging post: {{ $json.title }}",
+        "additionalFields": {
+          "content": "=This is a post to demo automatic tagging a WordPress postvia n8n. The following content could be rewritten in full or part with commentary using AI.\n\n{{ $json.content }}",
+          "tags": "={{ $json.tag_ids }}"
+        }
+      },
+      "id": "2502b9fa-d171-4ced-9c46-39dbfe5b820c",
+      "name": "Wordpress",
+      "type": "n8n-nodes-base.wordpress",
+      "position": [
+        1728,
+        192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {},
+      "id": "a7ed2bcd-4406-49be-ab55-979ba8ff79d3",
+      "name": "Demo Usage in Another Workflow",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "position": [
+        -864,
+        192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "siXUnQhJpCJ9rHzu"
+        },
+        "mode": "each",
+        "options": {}
+      },
+      "id": "02260d08-c3d7-41d7-8981-5ec920b1df0a",
+      "name": "Auto-Tag Posts in WordPress",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "position": [
+        1312,
+        192
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Please provide 3-5 suitable tags for the following article:\n\n{{ $json.content }}\n\nTag Formatting Rules:\n1. Tags should be in title case",
+        "hasOutputParser": true
+      },
+      "id": "26490714-5a98-45b7-b564-d4bf2d596f09",
+      "name": "Generate tags for article",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        720,
+        192
+      ],
+      "typeVersion": 1.4
+    }
+  ],
+  "pinData": {
+    "Generate tags for article": [
+      {
+        "json": {
+          "output": {
+            "tags": [
+              "Team Achievements",
+              "Global Community",
+              "Product Growth",
+              "2024 Highlights",
+              "Reflecting on Progress"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "connections": {
+    "If": {
+      "main": [
+        [
+          {
+            "node": "GET updated WP tags",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "POST WP tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET WP tags": {
+      "main": [
+        [
+          {
+            "node": "Combine slugs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Keep matches": {
+      "main": [
+        [
+          {
+            "node": "Combine tag_ids",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "MOCK article": {
+      "main": [
+        [
+          {
+            "node": "Auto-Tag Posts in WordPress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "POST WP tags": {
+      "main": [
+        [
+          {
+            "node": "GET updated WP tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine slugs": {
+      "main": [
+        [
+          {
+            "node": "Return missing tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Combine tag_ids": {
+      "main": [
+        [
+          {
+            "node": "Loop over articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS Feed Trigger": {
+      "main": [
+        [
+          {
+            "node": "Generate tags for article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop over articles": {
+      "main": [
+        [],
+        [
+          {
+            "node": "SET initial record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SET initial record": {
+      "main": [
+        [
+          {
+            "node": "GET WP tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "GET updated WP tags": {
+      "main": [
+        [
+          {
+            "node": "Keep matches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return missing tags": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return article details": {
+      "main": [
+        [
+          {
+            "node": "Wordpress",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Auto-fixing Output Parser",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-fixing Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Generate tags for article",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate tags for article": {
+      "main": [
+        [
+          {
+            "node": "MOCK article",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Auto-Tag Posts in WordPress": {
+      "main": [
+        [
+          {
+            "node": "Return article details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Demo Usage in Another Workflow": {
+      "main": [
+        [
+          {
+            "node": "Loop over articles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "8194decb-cba4-465c-9a1e-baed21abc727",
+  "meta": {
+    "instanceId": "c25f039cc5b766738ff29c840bdf062d819a7e136af2e250d211e1fad1bc97ae"
+  },
+  "id": "GDjf7g5jRfVkNWuJ",
+  "tags": []
+}

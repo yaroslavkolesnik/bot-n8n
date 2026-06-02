@@ -1,0 +1,161 @@
+{
+  "name": "Slack bot",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "af3864a7-42a2-48c4-bc4c-6c755a2cc5d8",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "position": [
+        192,
+        464
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "dq1OF7oaJHXFn9zr",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook to receive message').item.json.body.token }}",
+        "contextWindowLength": 10
+      },
+      "id": "e8a7ecf2-8660-46e7-93cb-c168591804ac",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "position": [
+        432,
+        480
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "={{ $('Webhook to receive message').item.json.body.event.channel }}",
+          "mode": "id"
+        },
+        "text": "={{ $json.output }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false,
+          "mrkdwn": true,
+          "sendAsUser": "Effibotics Bot"
+        }
+      },
+      "id": "9d70a5e8-a912-4b7e-a149-c5fa3fd8b5c1",
+      "name": "Send response back to slack channel",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        704,
+        144
+      ],
+      "typeVersion": 2.1,
+      "webhookId": "c838a394-7c42-49de-956b-8f9a42a5bbec",
+      "credentials": {
+        "slackApi": {
+          "id": "z2QDPmM9i2Kbnn6b",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "slack-bot",
+        "options": {}
+      },
+      "id": "e81ab558-fcd2-41d1-b7a6-a79dee5df500",
+      "name": "Webhook to receive message",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        48,
+        144
+      ],
+      "webhookId": "28b84545-96aa-42f5-990b-aa8783a320ca",
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.body.event.text }}",
+        "options": {
+          "systemMessage": "You are Effibotics AI personal assistant. Your task will be to provide helpful assistance and advice related to automation and such tasks. "
+        }
+      },
+      "id": "a8d51dd2-dd5f-4d6a-a8cc-3850c396ed34",
+      "name": "Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "position": [
+        272,
+        144
+      ],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Agent": {
+      "main": [
+        [
+          {
+            "node": "Send response back to slack channel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook to receive message": {
+      "main": [
+        [
+          {
+            "node": "Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "e9a01663-d964-42c4-8d9e-93ba0158908f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "c25f039cc5b766738ff29c840bdf062d819a7e136af2e250d211e1fad1bc97ae"
+  },
+  "id": "DBeBY2wrChvVLqNq",
+  "tags": []
+}
